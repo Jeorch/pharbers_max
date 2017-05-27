@@ -1,20 +1,18 @@
-package com.pharbers.aqll.alcalc.almain
-
-import java.io.{FileWriter, PrintWriter}
+package com.pharbers.aqll.alCalc.almain
 
 import akka.actor.{Actor, ActorLogging, Props}
-import com.pharbers.aqll.alcalc.aldata.alStorage
-import com.pharbers.aqll.alcalc.alFileHandler.altext.FileOpt
-import com.pharbers.aqll.alcalc.alfinaldataprocess.alInertDatabase
-import com.pharbers.aqll.alcalc.aljobs.alJob.{common_jobs, worker_core_calc_jobs}
-import com.pharbers.aqll.alcalc.aljobs.aljobtrigger.alJobTrigger.{concert_calc_avg, _}
-import com.pharbers.aqll.alcalc.almaxdefines.alCalcParmary
-import com.pharbers.aqll.alcalc.alprecess.alprecessdefines.alPrecessDefines._
-import com.pharbers.aqll.alcalc.alstages.alStage
-import com.pharbers.aqll.alcalc.alCommon.DefaultData
-import com.pharbers.aqll.alcalc.almodel.IntegratedData
-import com.pharbers.aqll.alcalc.almodel.westMedicineIncome
-import com.pharbers.aqll.util.{GetProperties, MD5}
+import com.pharbers.aqll.alCalaHelp.alMaxDefines.alCalcParmary
+import com.pharbers.aqll.common.alEncryption.alEncryptionOpt
+import com.pharbers.aqll.common.alFileHandler.fileConfig._
+import com.pharbers.aqll.alCalc.almodel.java.IntegratedData
+import com.pharbers.aqll.alCalc.almodel.scala.westMedicineIncome
+import com.pharbers.aqll.alCalcMemory.aldata.alStorage
+import com.pharbers.aqll.alCalcMemory.aljobs.alJob.{common_jobs, worker_core_calc_jobs}
+import com.pharbers.aqll.alCalcMemory.aljobs.aljobtrigger.alJobTrigger._
+import com.pharbers.aqll.alCalcMemory.alprecess.alprecessdefines.alPrecessDefines._
+import com.pharbers.aqll.alCalcMemory.alstages.alStage
+import com.pharbers.aqll.alCalcOther.alfinaldataprocess.scala.alInertDatabase
+import com.pharbers.aqll.common.alFileHandler.alFilesOpt.alFileOpt
 
 import scala.concurrent.stm.{Ref, atomic}
 
@@ -64,13 +62,13 @@ class alConcertCalcActor extends Actor
 //			println(s"avg at ${index.single.get} is $avg")
 
 			val sub_uuid = p.subs(index.single.get).uuid
-			val path = s"${GetProperties.memorySplitFile}${GetProperties.calc}$sub_uuid"
-			val dir = FileOpt(path)
-			if (!dir.isExist)
+			val path = s"${memorySplitFile}${calc}$sub_uuid"
+			val dir = alFileOpt(path)
+			if (!dir.isExists)
 				dir.createDir
 
-			val source = FileOpt(path + "/" + "data")
-			if (source.isExist) {
+			val source = alFileOpt(path + "/" + "data")
+			if (source.isExists) {
 //				val target = (path + "/" + "result")
 
 				//val writer = new FileWriter(target, true)
@@ -122,7 +120,7 @@ class alConcertCalcActor extends Actor
 	def max_precess(element2: IntegratedData, sub_uuid: String, log: Option[String] = None)(recall: List[IntegratedData])(c: alCalcParmary) = {
 		if (!log.isEmpty) {
 			println(s"concert index ${index.single.get} calc in $log")
-			val universe = MD5.md5(c.company + c.year + c.market)
+			val universe = alEncryptionOpt.md5(c.company + c.year + c.market)
 //			println(s"universe = $universe")
 			val tmp =
 			alShareData.hospdata(universe, c.company) map { element =>
@@ -143,13 +141,13 @@ class alConcertCalcActor extends Actor
 				backfireData(mrd)(recall)
 			}
 
-			val path = s"${GetProperties.memorySplitFile}${GetProperties.calc}$sub_uuid"
-			val dir = FileOpt(path)
-			if (!dir.isExist)
+			val path = s"${memorySplitFile}${calc}$sub_uuid"
+			val dir = alFileOpt(path)
+			if (!dir.isExists)
 				dir.createDir
 
-			val file = FileOpt(path + "/" + "data")
-			if (!file.isExist)
+			val file = alFileOpt(path + "/" + "data")
+			if (!file.isExists)
 				file.createFile
 
 			file.appendData2File(tmp)
@@ -158,8 +156,8 @@ class alConcertCalcActor extends Actor
 
 	def resignIntegratedData(parend_uuid: String)(group: alStorage): List[IntegratedData] = {
 		val recall = common_jobs()
-		val path = s"${GetProperties.memorySplitFile}${GetProperties.sync}$parend_uuid"
-		recall.cur = Some(alStage(FileOpt(path).lstFiles))
+		val path = s"${memorySplitFile}${sync}$parend_uuid"
+		recall.cur = Some(alStage(alFileOpt(path).exHideListFile))
 		recall.process = restore_data() :: do_calc() :: do_union() ::
 			do_map(alShareData.txt2IntegratedData(_)) :: do_filter { iter =>
 			val t = iter.asInstanceOf[IntegratedData]

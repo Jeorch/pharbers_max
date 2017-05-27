@@ -1,137 +1,115 @@
 package controllers
 
-import play.api._
 import javax.inject._
-
-import module.common.alMarkets
+import com.pharbers.aqll.dbmodule.MongoDBModule
+import module.common.alModularEnum
+import module.common.alAdminEnum
+import module.common.alPageDefaultData._
 import play.api.mvc._
 
 @Singleton
-class Application extends Controller {
-  def test = Action {
-      Ok(views.html.test("Your new application is ready."))
-  }
+class Application@Inject() (mdb: MongoDBModule) extends Controller {
+  implicit val basic = mdb.basic
+  implicit val cores = mdb.cores
 
   //登录
   def login = Action { request =>
       Ok(views.html.login("Your new application is ready."))
   }
 
-  //首页
-  def index = Action { request =>
-      val token = request.cookies.get("user_token").map (x => x.value).getOrElse("")
-      if(token.equals("")){
-          Ok(views.html.login("Your new application is ready."))
-      }else{
-          Ok(views.html.index(enumAdministrator(request.cookies.get("is_administrator").map(x => x.value).get.toInt)))
-      }
-  }
-
   //注册
   def register = Action {
-      Ok(views.html.register("Your new application is ready."))
+    Ok(views.html.register("Your new application is ready."))
   }
 
-  //错误404
-  def error404 = Action {
-      Ok(views.html.error404("Your new application is ready."))
-  }
-
-  //错误500
-  def error500 = Action {
-      Ok(views.html.error500("Your new application is ready."))
-  }
-
-  //锁屏
-  def lockScreen = Action {
-      Ok(views.html.lockScreen("Your new application is ready."))
-  }
-
-  //忘记密码
-  def forgotPassword = Action {
-      Ok(views.html.forgotPassword("Your new application is ready."))
-  }
-
-  //空页面
-  def emptyPage = Action {
-      Ok(views.html.emptyPage("Your new application is ready."))
+  //首页
+  def index = Action { request =>
+      if(getUserTokenByCookies(request).equals("")){
+          Ok(views.html.login("Your new application is ready."))
+      }else{
+          Ok(views.html.index(getAdminByCookies(request)))
+      }
   }
 
   //文件上传
   def filesUpload = Action { request =>
-      val token = request.cookies.get("user_token").map (x => x.value).getOrElse("")
-      val is_administrator = enumAdministrator(request.cookies.get("is_administrator").map(x => x.value).get.toInt)
-      if(token.equals("")){
+      if(getUserTokenByCookies(request).equals("")){
           Ok(views.html.login("Your new application is ready."))
       }else{
-          Ok(views.html.filesUpload(is_administrator,alMarkets.alGetMarkets("")))
+          Ok(views.html.filesUpload(getAdminByCookies(request),PageDefaultData(alModularEnum.FU,basic,cores)._1))
       }
   }
 
   //样本检查
   def sampleCheck = Action { request =>
-      val token = request.cookies.get("user_token").map (x => x.value).getOrElse("")
-      if(token.equals("")){
+      if(getUserTokenByCookies(request).equals("")){
           Ok(views.html.login("Your new application is ready."))
       }else{
-          Ok(views.html.sampleCheck(enumAdministrator(request.cookies.get("is_administrator").map(x => x.value).get.toInt),alMarkets.alGetMarkets("sc")))
+          val defaultdata = PageDefaultData(alModularEnum.SC,basic,cores,false)
+          Ok(views.html.sampleCheck(getAdminByCookies(request),defaultdata._1,defaultdata._2))
       }
   }
 
   //样本报告
   def samplereport = Action { request =>
-    val token = request.cookies.get("user_token").map (x => x.value).getOrElse("")
-    if(token.equals("")){
+    if(getUserTokenByCookies(request).equals("")){
       Ok(views.html.login("Your new application is ready."))
     }else{
-      Ok(views.html.sampleReport(enumAdministrator(request.cookies.get("is_administrator").map(x => x.value).get.toInt),alMarkets.alGetMarkets("sc")))
+      Ok(views.html.sampleReport(getAdminByCookies(request),PageDefaultData(alModularEnum.SR,basic,cores)._1))
     }
   }
 
   //结果检查
-  def modelOperation = Action { request =>
-      val token = request.cookies.get("user_token").map (x => x.value).getOrElse("")
-      if(token.equals("")){
+  def resultcheck = Action { request =>
+      if(getUserTokenByCookies(request).equals("")){
           Ok(views.html.login("Your new application is ready."))
       }else{
-          Ok(views.html.modelOperation(enumAdministrator(request.cookies.get("is_administrator").map(x => x.value).get.toInt),alMarkets.alGetMarkets("")))
+        val defaultdata = PageDefaultData(alModularEnum.RC,basic,cores,false)
+        Ok(views.html.resultCheck(getAdminByCookies(request),defaultdata._1,defaultdata._2))
       }
   }
 
   //结果查询
   def resultQuery = Action { request =>
-      val token = request.cookies.get("user_token").map (x => x.value).getOrElse("")
-      if(token.equals("")){
+      if(getUserTokenByCookies(request).equals("")){
           Ok(views.html.login("Your new application is ready."))
       }else{
-          Ok(views.html.resultQuery(enumAdministrator(request.cookies.get("is_administrator").map(x => x.value).get.toInt),alMarkets.alGetMarkets("")))
+          Ok(views.html.resultQuery(getAdminByCookies(request),PageDefaultData(alModularEnum.RQ,basic,cores)._1))
       }
   }
 
   //用户管理页面
   def usermanage = Action {request =>
-    val token = request.cookies.get("user_token").map (x => x.value).getOrElse("")
-    val is_administrator = enumAdministrator(request.cookies.get("is_administrator").map(x => x.value).get.toInt)
-    if(token.equals("")){
+    if(getUserTokenByCookies(request).equals("")){
       Ok(views.html.login("Your new application is ready."))
     }else{
-      Ok(views.html.userManage(is_administrator))
+      Ok(views.html.userManage(getAdminByCookies(request)))
     }
   }
 
   //市场管理页面
   def marketmanage = Action {request =>
-    val token = request.cookies.get("user_token").map (x => x.value).getOrElse("")
-    val is_administrator = enumAdministrator(request.cookies.get("is_administrator").map(x => x.value).get.toInt)
-    if(token.equals("")){
+    if(getUserTokenByCookies(request).equals("")){
       Ok(views.html.login("Your new application is ready."))
     }else{
-      Ok(views.html.marketManage(is_administrator))
+      Ok(views.html.marketManage(getAdminByCookies(request)))
     }
   }
 
-  def enumAdministrator(is_administrator : Int) = is_administrator match {
-        case 0 => "No"
-        case 1 => "Yes"
+  def getUserTokenByCookies(request: Request[AnyContent]) : String = {
+    request.cookies.get("user_token").map (x => x.value).getOrElse("")
+  }
+
+  def getAdminByCookies(request: Request[AnyContent]) : String = {
+    request.cookies.get("is_administrator").map(x => x.value).get.toInt match {
+      case 0 => alAdminEnum.users.toString
+      case 1 => alAdminEnum.admin.toString
+      case 2 => alAdminEnum.admin.toString
+    }
+  }
+
+  //EmberWebPage
+  def emberWebPage(path : String) = Action {
+    Ok(views.html.new_web())
   }
 }
